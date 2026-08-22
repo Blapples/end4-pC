@@ -196,8 +196,14 @@ Variants {
         // animation by direction. It also skips the animation while the config
         // is still loading, so the initial set never plays a grow-in on startup.
         function setCenteredProgress(value) {
-            if (!bgRoot.centeredWallpaperEnabled || !bgRoot.centeredAnimationReady || !Config.ready) {
+            if (!bgRoot.centeredWallpaperEnabled || !Config.ready) {
                 bgRoot.centeredProgress = value
+                return
+            }
+            if (!bgRoot.centeredAnimationReady) {
+                // first real set after config ready — direct, then arm animation for next lock/unlock
+                bgRoot.centeredProgress = value
+                bgRoot.centeredAnimationReady = true
                 return
             }
             if (value === bgRoot.centeredProgress) return
@@ -282,6 +288,7 @@ Variants {
         }
         function centeredBgOpacity() {
             if (!bgRoot.centeredWallpaperEnabled) return 0
+            if (bgRoot.wallpaperIsVideo) return 0
             return Math.max(0, Math.min(1, (1 - bgRoot.centeredProgress) / bgRoot.centeredFade))
         }
 
@@ -606,7 +613,7 @@ Variants {
                 anchors.centerIn: parent
                 width: bgRoot.centeredShapeRenderSize
                 height: bgRoot.centeredShapeRenderSize
-                color: bgRoot.centeredWallpaperColor
+                color: bgRoot.wallpaperIsVideo ? "transparent" : bgRoot.centeredWallpaperColor
                 shape: bgRoot.centeredWallpaperShape
                 transformOrigin: Item.Center
                 // Base scale (lock/unlock) multiplied by the click pulse.
@@ -680,6 +687,7 @@ Variants {
                     // Cooldown locks cycling until the shape change is fully done,
                     // so fast scrolling can't skip through shapes.
                     onWheel: (wheel) => {
+                        if (!Config.options.background.centeredWallpaperShapeCycle) return
                         if (shapeCycleCooldown.running) return
                         GlobalStates.cycleCenteredWallpaperShape(wheel.angleDelta.y > 0 ? 1 : -1)
                         shapeCycleCooldown.restart()
