@@ -149,6 +149,19 @@ MouseArea {
             root.forceFieldFocus()
             GlobalStates.centeredWallpaperThumpRequested()
         }
+        // Scroll cycles the centered wallpaper shape (up = next, down = previous),
+        // same cooldown as the desktop so fast scrolling can't skip shapes.
+        onWheel: (wheel) => {
+            if (shapeCycleCooldown.running) return
+            root.forceFieldFocus()
+            GlobalStates.cycleCenteredWallpaperShape(wheel.angleDelta.y > 0 ? 1 : -1)
+            shapeCycleCooldown.restart()
+            wheel.accepted = true
+        }
+        Timer {
+            id: shapeCycleCooldown
+            interval: 400
+        }
     }
 
     // Main toolbar: password box
