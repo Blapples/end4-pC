@@ -171,6 +171,17 @@ AbstractBackgroundWidget {
                 radius: Appearance.rounding?.verylarge ?? 30
                 color: Appearance.colors.colPrimaryContainer
 
+                FastBlurred {
+                    anchors.fill: parent
+                    blurSource: root.wallpaperItem
+                    cardRadius: card.radius
+                    tint: Appearance.colors.colLayer1
+                    tintOpacity: 0.55
+                    trackX: root.x  
+                    trackY: root.y
+                    visible: Config.options.background.widgets.blurWidgets 
+                }
+
                 RowLayout {
                     anchors { fill: parent; margins: 10 }
                     spacing: 12
