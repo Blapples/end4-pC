@@ -64,6 +64,7 @@ ContentPage {
                     enabled: Config.options.appearance.transparency.enable
                             && !Config.options.appearance.transparency.automatic
                     from: 0; to: 0.6
+                    stopIndicatorValues: [0.11]
                     value: Config.options.appearance.transparency.backgroundTransparency
                     onValueChanged: {
                         Config.options.appearance.transparency.backgroundTransparency = value
@@ -75,6 +76,7 @@ ContentPage {
                     enabled: Config.options.appearance.transparency.enable
                             && !Config.options.appearance.transparency.automatic
                     from: 0; to: 1
+                    stopIndicatorValues: [0.57]
                     value: Config.options.appearance.transparency.contentTransparency 
                     onValueChanged: {
                         Config.options.appearance.transparency.contentTransparency = value  
