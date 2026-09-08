@@ -18,7 +18,7 @@ Item {
     property real originY: 0
 
     implicitWidth: isVertical ? 276 : 420
-    implicitHeight: isVertical ? 252 : 150
+    implicitHeight: isVertical ? 252 + 12 : 150
 
     readonly property string glyphTopLeft: DateTime.digitH0
     readonly property string glyphTopRight: DateTime.digitH1
