@@ -70,29 +70,15 @@ Item {
         "Vocal": "mic", "Pop": "star", "Rock": "bolt", "Jazz": "piano", "Classic": "music_note"
     })
 
-    // Genre-aware Auto EQ: neither Spotify nor a browser exposes genre over
-    // MPRIS, so equalizer.sh looks up the current artist's tags via
-    // Last.fm instead (see genre_tags in that script). This maps those
-    // (messy, crowdsourced) tags to one of our 8 presets by substring -
-    // checked in this order, first match wins, so put more specific
-    // genres before broad ones that might also appear as a tag together.
-    readonly property var genreTagPresetMap: ({
-        "metal": "Rock", "punk": "Rock", "grunge": "Rock", "rock": "Rock",
-        "classical": "Classic", "orchestra": "Classic", "opera": "Classic", "baroque": "Classic",
-        "jazz": "Jazz", "blues": "Jazz", "swing": "Jazz",
-        "hip hop": "Bass", "hip-hop": "Bass", "rap": "Bass", "trap": "Bass",
-        "edm": "Bass", "electronic": "Bass", "house": "Bass", "techno": "Bass", "dubstep": "Bass", "bass": "Bass",
-        "acoustic": "Vocal", "folk": "Vocal", "singer-songwriter": "Vocal", "a cappella": "Vocal", "vocal": "Vocal",
-        "pop": "Pop"
-    })
-    // Avoids re-querying (network + cache read) on every metadata blip for
-    // the same artist - only look up again once the artist actually changes.
-    property string lastGenreArtist: ""
+    // Auto EQ (genre-follow) now lives in EqualizerAutoService so it keeps
+    // running whether or not this view/popup is open - see that file for
+    // why. root.autoEnabled below just mirrors the service's state for
+    // display; toggleAuto()/maybeLookupGenre() below delegate to it too.
+    readonly property bool autoEnabled: EqualizerAutoService.autoEnabled
 
-    // Mirrors equalizer.sh's auto-eq flag (get_auto/set_auto) and its
-    // custom preset store (get_custom/save_custom/delete_custom) - both
-    // already implemented backend-side, just not exposed in the UI before.
-    property bool autoEnabled: false
+    // Mirrors equalizer.sh's custom preset store (get_custom/save_custom/
+    // delete_custom) - already implemented backend-side, just not exposed
+    // in the UI before.
     property string lastfmKey: ""
     property bool showLastfmKeyDialog: false
     property bool lastfmKeyRevealed: false
@@ -166,11 +152,6 @@ Item {
         eqGetNeedsSaveProc.running = true
     }
 
-    function refreshAuto() {
-        eqGetAutoProc.running = false
-        eqGetAutoProc.running = true
-    }
-
     function refreshLastfmKey() {
         eqGetLastfmKeyProc.running = false
         eqGetLastfmKeyProc.running = true
@@ -183,50 +164,17 @@ Item {
         root.showLastfmKeyDialog = false
         // A key just got set (or cleared) - re-run the current artist's
         // lookup instead of waiting for the next track change.
-        root.lastGenreArtist = ""
-        root.maybeLookupGenre()
+        EqualizerAutoService.lastGenreArtist = ""
+        EqualizerAutoService.maybeLookupGenre()
     }
 
     function toggleAuto() {
-        const next = !root.autoEnabled
-        root.autoEnabled = next
-        Quickshell.execDetached(["bash", Directories.eqScriptPath, Directories.eqStateDir, "set_auto", next ? "true" : "false"])
-        if (next) {
-            // Auto can't do anything without a key to look genres up with -
-            // open the paste field right away instead of letting it silently
-            // no-op every track change.
-            if (root.lastfmKey.length === 0) root.showLastfmKeyDialog = true
-            // Force a fresh lookup rather than skipping it because the
-            // artist "hasn't changed" since last time Auto happened to be on.
-            root.lastGenreArtist = ""
-            root.maybeLookupGenre()
-        }
-    }
-
-    // Called whenever the current artist might have changed (track change,
-    // Auto just got switched on, popup just opened with Auto already on).
-    function maybeLookupGenre() {
-        if (!root.autoEnabled) return
-        const artist = root.player?.trackArtist ?? ""
-        if (!artist || artist === root.lastGenreArtist) return
-        root.lastGenreArtist = artist
-        genreTagsProc.artist = artist
-        genreTagsProc.running = false
-        genreTagsProc.running = true
-    }
-
-    // First tag that matches a key in genreTagPresetMap wins; no match
-    // (including an empty tag list - unset API key, unknown artist, no
-    // network) just leaves the current preset alone.
-    function presetForTags(tags) {
-        if (!Array.isArray(tags)) return null
-        for (const tag of tags) {
-            const lower = String(tag).toLowerCase()
-            for (const key in root.genreTagPresetMap) {
-                if (lower.includes(key)) return root.genreTagPresetMap[key]
-            }
-        }
-        return null
+        const goingOn = !EqualizerAutoService.autoEnabled
+        EqualizerAutoService.toggleAuto()
+        // Auto can't do anything without a key to look genres up with -
+        // open the paste field right away instead of letting it silently
+        // no-op every track change.
+        if (goingOn && root.lastfmKey.length === 0) root.showLastfmKeyDialog = true
     }
 
     function refreshCustomPresets() {
@@ -281,7 +229,6 @@ Item {
 
     Component.onCompleted: {
         root.refresh()
-        root.refreshAuto()
         root.refreshLastfmKey()
         root.refreshCustomPresets()
         root.refreshNeedsSave()
@@ -321,18 +268,6 @@ Item {
     }
 
     Process {
-        id: eqGetAutoProc
-        command: ["bash", Directories.eqScriptPath, Directories.eqStateDir, "get_auto"]
-        stdout: StdioCollector {
-            onStreamFinished: {
-                const t = text.trim()
-                root.autoEnabled = (t === "true" || t === "1")
-                if (root.autoEnabled) root.maybeLookupGenre()
-            }
-        }
-    }
-
-    Process {
         id: eqGetLastfmKeyProc
         command: ["bash", Directories.eqScriptPath, Directories.eqStateDir, "get_lastfm_key"]
         stdout: StdioCollector {
@@ -349,38 +284,6 @@ Item {
             onStreamFinished: {
                 const t = text.trim()
                 root.needsManualSave = (t === "true" || t === "1")
-            }
-        }
-    }
-
-    // Fires on every track change (title/artist swap); harmless no-op if
-    // Auto is off or the artist hasn't actually changed (see
-    // maybeLookupGenre's own guard against duplicate lookups).
-    Connections {
-        target: root.player
-        function onTrackArtistChanged() { root.maybeLookupGenre() }
-    }
-
-    Process {
-        id: genreTagsProc
-        property string artist: ""
-        // "true" is a harmless no-op command for when artist is still
-        // empty (e.g. before the first real onTrackArtistChanged fires).
-        command: artist.length > 0
-            ? ["bash", Directories.eqScriptPath, Directories.eqStateDir, "genre_tags", artist]
-            : ["true"]
-        stdout: StdioCollector {
-            onStreamFinished: {
-                try {
-                    const tags = JSON.parse(text)
-                    const preset = root.presetForTags(tags)
-                    if (preset && root.autoEnabled && preset !== root.presetName) {
-                        root.applyPreset(preset)
-                    }
-                } catch (e) {
-                    // No tags / API key not set up / network hiccup - leave
-                    // the current preset alone rather than erroring.
-                }
             }
         }
     }
