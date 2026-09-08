@@ -117,6 +117,11 @@ Item {
         root.bands[index] = value
         root.bandsChanged()
         root.presetName = "Custom"
+        // Keep EqualizerAutoService's mirror of the active preset in sync -
+        // otherwise a later genre lookup that resolves back to whatever
+        // preset was active before this edit sees no change and skips
+        // re-applying it, even though the real active preset is now Custom.
+        EqualizerAutoService.currentPresetName = "Custom"
         root.pending = true
         Quickshell.execDetached(["bash", Directories.eqScriptPath, Directories.eqStateDir, "set_band", String(index + 1), String(Math.round(value))])
     }
@@ -141,6 +146,8 @@ Item {
         const vals = root.presetValues[name]
         if (vals) root.bands = vals.slice()
         root.presetName = name
+        // See setBand() above - keeps Auto's stale-preset check honest.
+        EqualizerAutoService.currentPresetName = name
         root.pending = false
         // ...while the backend writes + loads the matching EasyEffects preset.
         Quickshell.execDetached(["bash", Directories.eqScriptPath, Directories.eqStateDir, "preset", name])
@@ -189,6 +196,8 @@ Item {
         const vals = root.customPresets[name]
         if (vals) root.bands = vals.slice()
         root.presetName = name
+        // See setBand() above - keeps Auto's stale-preset check honest.
+        EqualizerAutoService.currentPresetName = name
         root.pending = false
         Quickshell.execDetached(["bash", Directories.eqScriptPath, Directories.eqStateDir, "preset", name])
         needsSaveRecheckTimer.restart()
@@ -204,6 +213,8 @@ Item {
         updated[trimmed] = root.bands.slice()
         root.customPresets = updated
         root.presetName = trimmed
+        // See setBand() above - keeps Auto's stale-preset check honest.
+        EqualizerAutoService.currentPresetName = trimmed
         root.showSaveDialog = false
         needsSaveRecheckTimer.restart()
     }
@@ -213,7 +224,11 @@ Item {
         const updated = Object.assign({}, root.customPresets)
         delete updated[name]
         root.customPresets = updated
-        if (root.presetName === name) root.presetName = "Custom"
+        if (root.presetName === name) {
+            root.presetName = "Custom"
+            // See setBand() above - keeps Auto's stale-preset check honest.
+            EqualizerAutoService.currentPresetName = "Custom"
+        }
     }
 
     // A short one-shot delay before polling get_needs_save after any
@@ -225,6 +240,30 @@ Item {
         id: needsSaveRecheckTimer
         interval: 350
         onTriggered: root.refreshNeedsSave()
+    }
+
+    // EqualizerAutoService runs in the background independent of this view,
+    // so a genre-triggered preset switch can happen while the popup is
+    // already open (or was open before the track changed). Without this,
+    // the sliders/preset chip only ever reflected whatever was on disk at
+    // Component.onCompleted - i.e. Auto looked like it "worked" only if you
+    // closed and reopened the popup. Mirror the service's applied preset
+    // straight into the view's own display, the same way applyPreset()
+    // already does for a manual tap - all of Auto's targets (Rock, Classic,
+    // Jazz, Bass, Vocal, Pop) are built-ins with known values, so no disk
+    // read (and no race with the backend's own async write) is needed.
+    Connections {
+        target: EqualizerAutoService
+        function onCurrentPresetNameChanged() {
+            const name = EqualizerAutoService.currentPresetName
+            const vals = root.presetValues[name]
+            if (vals) {
+                root.bands = vals.slice()
+                root.presetName = name
+                root.pending = false
+                needsSaveRecheckTimer.restart()
+            }
+        }
     }
 
     Component.onCompleted: {
@@ -258,6 +297,10 @@ Item {
                         Number(data.b6), Number(data.b7), Number(data.b8), Number(data.b9), Number(data.b10)
                     ]
                     root.presetName = data.preset ?? "Custom"
+                    // Safety net alongside the explicit syncs in setBand()/
+                    // applyPreset()/etc. - if anything else ever writes the
+                    // state file, Auto's mirror still gets corrected here.
+                    EqualizerAutoService.currentPresetName = root.presetName
                     root.pending = !!data.pending
                     root.preamp = Number(data.preamp) || 0
                 } catch (e) {
