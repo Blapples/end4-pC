@@ -154,6 +154,7 @@ Variants {
         }
 
         property real transitionProgress: 1.0
+        property bool transitionPending: false
 
         screen: modelData
         exclusionMode: ExclusionMode.Ignore
@@ -194,12 +195,14 @@ Variants {
         onWallpaperPathChanged: {
             bgRoot.videoRevealed = false
             if (wallpaperSafetyTriggered) {
+                bgRoot.transitionPending = false
                 previousWallpaper.source = ""
                 wallpaper.source = ""
                 bgRoot.transitionProgress = 1.0
                 return
             }
             if (bgRoot.wallpaperAnimation === "") {
+                bgRoot.transitionPending = false
                 wallpaper.source = wallpaperPath
                 previousWallpaper.source = wallpaperPath
                 bgRoot.currentWallpaperSource = wallpaperPath
@@ -209,15 +212,17 @@ Variants {
             }
 
             previousWallpaper.source = bgRoot.currentWallpaperSource
-            wallpaper.source = wallpaperPath
             bgRoot.currentWallpaperSource = wallpaperPath
             if (bgRoot.wallpaperAnimation === "random") {
                 bgRoot.currentShader = bgRoot.shaderList[Math.floor(Math.random() * bgRoot.shaderList.length)]
             } else {
                 bgRoot.currentShader = bgRoot.wallpaperAnimation
             }
-            bgRoot.transitionProgress = 0.0
+            bgRoot.transitionPending = true
+            wallpaper.source = wallpaperPath
             if (wallpaper.status === Image.Ready) {
+                bgRoot.transitionPending = false
+                bgRoot.transitionProgress = 0.0
                 transitionAnim.restart()
             }
         }
@@ -228,8 +233,8 @@ Variants {
             property: "transitionProgress"
             from: 0.0
             to: 1.0
-            duration: 1200
-            easing.type: Easing.InOutCubic
+            duration: 1000
+            easing.type: Easing.InOutQuad
             onFinished: {
                 previousWallpaper.source = bgRoot.currentWallpaperSource
                 bgRoot.previousWallpaperSource = ""
@@ -277,7 +282,7 @@ Variants {
                 smooth: true
                 layer.enabled: true
                 visible: true
-                opacity: 0
+                opacity: 1
             }
 
             StyledImage {
@@ -293,7 +298,9 @@ Variants {
                 opacity: (bgRoot.wallpaperAnimation !== "" && bgRoot.transitionProgress < 1.0) ? 0 : 1
                 Behavior on opacity { enabled: false }
                 onStatusChanged: {
-                    if (status === Image.Ready && bgRoot.transitionProgress === 0.0) {
+                    if (status === Image.Ready && bgRoot.transitionPending) {
+                        bgRoot.transitionPending = false
+                        bgRoot.transitionProgress = 0.0
                         transitionAnim.restart()
                     }
                 }
