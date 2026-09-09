@@ -33,7 +33,7 @@ Item {
 
     onProviderChanged:   { root.hoveredItem = null; _syncAndFetch() }
     onResolutionChanged: _syncAndFetch()
-    onColorGroupChanged: { if (root.provider === "naive") _syncAndFetch() }
+    onColorGroupChanged: { if (root.provider === "naive" || root.provider === "blapples") _syncAndFetch() }
 
     function _syncAndFetch() {
         if (root.missingKey) return
@@ -239,7 +239,7 @@ Item {
                             ? Qt.rgba(
                                 Appearance.colors.colPrimary.r,
                                 Appearance.colors.colPrimary.g,
-                                Appearance.colors.colPrimary.b, 0.35)
+                                Appearance.colors.colPrimary.b, 0.15)
                             : "transparent"
                         border.width: delegateItem.index === grid.currentIndex ? 2 : 0
                         border.color: Appearance.colors.colPrimary

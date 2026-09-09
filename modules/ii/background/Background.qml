@@ -563,6 +563,7 @@ Variants {
                         && (Config.options.background.screenList.length === 0
                             || Config.options.background.screenList.includes(bgRoot.screen.name))
                     sourceComponent: VisualizerWidget {
+                        showSelectionBorder: false
                         screenWidth: bgRoot.screen.width
                         screenHeight: bgRoot.screen.height
                         scaledScreenWidth: bgRoot.screen.width
@@ -580,6 +581,7 @@ Variants {
                         scaledScreenWidth:  bgRoot.screen.width
                         scaledScreenHeight: bgRoot.screen.height
                         wallpaperScale:     1
+                        wallpaperItem: wallpaper 
                     }
                 }
                 FadeLoader {
@@ -592,6 +594,7 @@ Variants {
                         scaledScreenWidth: bgRoot.screen.width
                         scaledScreenHeight: bgRoot.screen.height
                         wallpaperScale: 1
+                        wallpaperItem: wallpaper 
                     }
                 }
                 FadeLoader {
@@ -604,6 +607,7 @@ Variants {
                         scaledScreenWidth: bgRoot.screen.width
                         scaledScreenHeight: bgRoot.screen.height
                         wallpaperScale: 1
+                        wallpaperItem: wallpaper
                     }
                 }
                 FadeLoader {
@@ -618,6 +622,7 @@ Variants {
                         scaledScreenHeight: bgRoot.screen.height
                         wallpaperScale: 1
                         wallpaperSafetyTriggered: bgRoot.wallpaperSafetyTriggered
+                        wallpaperItem: wallpaper
                     }
                 }
                 FadeLoader {
@@ -630,6 +635,7 @@ Variants {
                         scaledScreenWidth: bgRoot.screen.width
                         scaledScreenHeight: bgRoot.screen.height
                         wallpaperScale: 1
+                        wallpaperItem: wallpaper 
                     }
                 }
                 FadeLoader {
@@ -644,6 +650,7 @@ Variants {
                         scaledScreenWidth: bgRoot.screen.width
                         scaledScreenHeight: bgRoot.screen.height
                         wallpaperScale: 1
+                        wallpaperItem: wallpaper 
                     }
                     onLoaded: {
                         if (item && item.requestReset) {
@@ -664,6 +671,7 @@ Variants {
                         scaledScreenWidth:  bgRoot.screen.width
                         scaledScreenHeight: bgRoot.screen.height
                         wallpaperScale:     1
+                        wallpaperItem: wallpaper 
                     }
                 }
                 FadeLoader {
@@ -676,6 +684,7 @@ Variants {
                         scaledScreenWidth:  bgRoot.screen.width
                         scaledScreenHeight: bgRoot.screen.height
                         wallpaperScale:     1
+                        wallpaperItem: wallpaper 
                     }
                 }
                 FadeLoader {
@@ -688,6 +697,7 @@ Variants {
                         scaledScreenWidth: bgRoot.screen.width
                         scaledScreenHeight: bgRoot.screen.height
                         wallpaperScale: 1
+                        wallpaperItem: wallpaper
                     }
                 }
                 FadeLoader {
@@ -700,6 +710,7 @@ Variants {
                         scaledScreenWidth: bgRoot.screen.width
                         scaledScreenHeight: bgRoot.screen.height
                         wallpaperScale: 1
+                        wallpaperItem: wallpaper 
                     }
                 }
                 FadeLoader {
@@ -712,6 +723,7 @@ Variants {
                         scaledScreenWidth: bgRoot.screen.width
                         scaledScreenHeight: bgRoot.screen.height
                         wallpaperScale: 1
+                        wallpaperItem: wallpaper 
                     }
                 }
                 FadeLoader {
@@ -724,6 +736,7 @@ Variants {
                         scaledScreenWidth:  bgRoot.screen.width
                         scaledScreenHeight: bgRoot.screen.height
                         wallpaperScale:     1
+                        wallpaperItem: wallpaper 
                     }
                 }
             }
