@@ -458,7 +458,7 @@ MouseArea {
                             id: sortMenuBackground
                             anchors.fill: parent
                             radius: Appearance.rounding.normal
-                            color: Appearance.colors.colLayer1
+                            color: Appearance.m3colors.m3surfaceContainer
                             border.width: 1
                             border.color: Appearance.colors.colLayer0Border
 
