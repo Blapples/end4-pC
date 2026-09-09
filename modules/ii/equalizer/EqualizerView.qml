@@ -959,6 +959,8 @@ Item {
                                             StyledImage {
                                                 anchors.fill: parent
                                                 source: root.displayedArtFilePath
+                                                sourceSize.width: nowPlayingArt.width * 2
+                                                sourceSize.height: nowPlayingArt.height * 2
                                                 fillMode: Image.PreserveAspectCrop
                                                 cache: false
                                                 antialiasing: true
