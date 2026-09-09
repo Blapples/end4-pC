@@ -812,7 +812,7 @@ Singleton {
                 property int columns: 4
                 property bool closeAfterSelection: true
                 property int changeInterval: 0 
-                property string sortMode: "custom"
+                property string sortMode: "time"
             }
 
             property JsonObject windows: JsonObject {
